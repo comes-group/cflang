@@ -152,9 +152,10 @@ branching is needed. This is also done using the `:` operator, but on numbers:
 ```
 
 Using the `:` operator on a number results in the function on its right-hand
-side being called. The result of the expression is 0 if the function was
-called, or 1 if the function wasn't called. This allows for an extra "else"
-branch to be added with the use of another call operation:
+side being called if the left-hand side is not equal to 0. The result of the
+expression is 0 if the function was called, or 1 if the function wasn't called.
+This allows for an extra "else" branch to be added with the use of another call
+operation:
 
 ```
 (x = 2)  -- if x is equal to 2
