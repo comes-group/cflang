@@ -1,0 +1,18 @@
+|fac| {
+  fac: 10, |x| { x!; };
+}
+-- fac
+: |n, yield| {
+  |aux| {
+    aux: aux, 1, 1;
+  }
+  : |aux, i, result| {
+    -- here, we leverage tail call optimization by inverting the condition
+    -- and making the iteration call be the last call in the function
+    ~(i <= n) : {
+      yield: result;
+    } : {
+      aux: aux, i + 1, result * i;
+    };
+  };
+}

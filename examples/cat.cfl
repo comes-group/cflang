@@ -1,0 +1,9 @@
+|echo| {
+  echo : echo, ??;
+}
+: |self, char| {
+  (char <> 0) : {
+    char!!;
+    self : self, ??;
+  };
+}

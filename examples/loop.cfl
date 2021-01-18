@@ -1,0 +1,19 @@
+|loop| {
+  loop: 1, 10, 1, |x| {
+    x!;
+  };
+}
+
+-- loop
+: |min, max, stride, yield| {
+  |aux| {
+    aux: aux, min;
+  }
+  -- aux
+  : |aux, i| {
+    (i <= max) : {
+      yield: i;
+      aux: aux, i + stride;
+    };
+  };
+}
