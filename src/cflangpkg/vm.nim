@@ -71,7 +71,7 @@ proc interpret*(assembly: Assembly, chunk: Chunk, opts: VmOptions): Value =
     tailCallArgs: seq[Value]
 
   while true:
-#     {.computedGoto.}
+    {.computedGoto.}
 
     let errpc = pc
 
