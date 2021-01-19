@@ -1,4 +1,5 @@
 import std/algorithm
+import std/strscans
 import std/strutils
 
 import npeg
@@ -86,7 +87,7 @@ let parser = peg(program, Token, p: ParseState):
     p.push Node(
       line: ($1).line,
       kind: nkIdent,
-      ident: ($1).ident,
+      ident: move ($1).ident,
     )
 
   unaryOp <- [tkMinus] | [tkNot]
@@ -105,10 +106,14 @@ let parser = peg(program, Token, p: ParseState):
       ascii: ($1).kind == tkAsk2,
     )
 
-  paren <- ([tkLParen] * expr * [tkRParen]) ^ 0
+  rparen <- [tkRParen] | E"missing right paren"
+  paren <- ([tkLParen] * expr * rparen) ^ 0
 
-  functionParams <- [tkPipe] * ?(ident * *([tkComma] * ident)) * [tkPipe]
-  functionBody <- ([tkLBrace] * *(expr * [tkSemi]) * [tkRBrace]) ^ 0
+  semi <- [tkSemi] | E"missing semicolon after expression"
+  pipe <- [tkPipe] | E"missing pipe to close argument list"
+  rbrace <- [tkRBrace] | E"missing right curly brace"
+  functionParams <- [tkPipe] * ?(ident * *([tkComma] * ident)) * pipe
+  functionBody <- ([tkLBrace] * *(expr * semi) * rbrace) ^ 0
 
   functionOp <- &([tkPipe] | [tkLBrace]):
     p.push Node(
@@ -121,7 +126,7 @@ let parser = peg(program, Token, p: ParseState):
   functionHead <- functionOp * ?functionParams:
     var params: seq[string]
     while not (p.top.kind == nkFunction and not p.top.paramsDone):
-      params.add p.pop.ident
+      params.add(move p.pop.ident)
     reverse params
     p.top.params = move params
     p.top.paramsDone = true
@@ -186,14 +191,25 @@ proc parse*(s: string): Node =
 
   var state: ParseState
 
-  let
-    tokens = s.tokenize
-    match = parser.match(tokens, state)
-  if not match.ok:
+  let tokens = s.tokenize
+  try:
+    let match = parser.match(tokens, state)
+    if not match.ok:
+      var
+        errtok = tokens[match.matchLen]
+        msg = "unexpected token at line " & $errtok.line & ": " & $errtok
+      raise newException(ParseError, move msg)
+  except NPegException as e:
     var
-      errtok = tokens[match.matchLen]
-      msg = "unexpected token at line " & $errtok.line & ": " & $errtok
-    raise newException(ParseError, move msg)
+      i: int
+      err: string
+    if scanf(e.msg, "Parsing error at #$i: expected \"$+\"", i, err):
+      var
+        errtok = tokens[e.matchLen]
+        msg = "syntax error near line " & $errtok.line & ": " & err
+      raise newException(ParseError, move msg)
+    else:
+      raise
 
   assert state.stack.len == 1,
     "parser bug: stray nodes were left on the stack: " & $state.stack

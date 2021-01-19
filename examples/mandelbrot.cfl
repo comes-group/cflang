@@ -33,7 +33,7 @@
         };
       };
     }
-    : 1000 -- max_iterations
+    : 200 -- max_iterations
     , px / width * 3.5 - 2.5 -- x0
     , py / height * 2 - 1    -- y0
     ;
@@ -64,5 +64,5 @@
   ;
 
 }
-: 120 -- width
-, 40 -- height
+: 80 -- width
+, 24 -- height
