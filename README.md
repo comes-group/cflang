@@ -10,8 +10,11 @@ through function parameters.
 #### C-four stars/asterisks/globs? What?
 
 It doesn't really mean anything. You can fill in these four asterisks with
-whatever you really want, be it an inside joke, be it a swear word or slur,
+whatever you really want, be it an *inside joke*, be it a swear word or slur,
 it can even be politically charged (I take that back, please don't).
+
+Alright, I'll be real with ya. The C\*\*\*\* actually stands for COMES.
+So, it *is* an inside joke. Are ya happy now?
 
 ## Syntax
 
