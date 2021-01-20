@@ -1,3 +1,5 @@
+## The virtual machine. This is what interprets bytecode.
+
 import std/math
 import std/strutils
 
@@ -5,19 +7,23 @@ import chunk
 
 type
   Closure = ref object
+    ## A closure object. This includes lifed locals.
     fn: Function
     lifted: seq[Value]
 
   ValueKind* = enum
+    ## The kind of a value.
     vkNumber
     vkClosure
 
   Value* = object
+    ## A value.
     case kind*: ValueKind
     of vkNumber: number*: float
     of vkClosure: closure: Closure
 
   VmOptions* = object
+    ## Options for I/O.
     askImpl*: proc (): float {.raises: [].}
     askAsciiImpl*: proc (): float {.raises: [].}
     showImpl*, showAsciiImpl*: proc (s: string) {.raises: [].}
@@ -25,6 +31,9 @@ type
   InterpretError* = object of ValueError
 
 proc `$`*(v: Value): string =
+  ## Stringifies a value.
+  ## For number values, the `.0` is not included, like the Nim stdlib does.
+  ## Functions are stringified to `<fn 0xFADDRESS>` for easier debugging.
 
   case v.kind
   of vkNumber:
@@ -33,7 +42,10 @@ proc `$`*(v: Value): string =
   of vkClosure: result = "<fn 0x" & $cast[int](v.closure).toHex(8) & ">"
 
 proc ascii(v: Value): string =
+  ## Returns the ASCII value of a number value.
   $char(v.number)
+
+# these are defined mainly because i wanted an easy way of debugging the stack
 
 proc add(s: var seq[Value], v: Value) =
   system.add(s, v)
@@ -51,9 +63,12 @@ proc setLen(s: var seq[Value], l: int) =
   system.setLen(s, l)
 
 proc interpret*(assembly: Assembly, chunk: Chunk, opts: VmOptions): Value =
+  ## Interprets a chunk of bytecode from the assembly (usually the main chunk).
 
   type
     StackFrame = object
+      ## A stack frame. This essentially captures most properties of the stack
+      ## into an object that can later be restored.
       chunk: Chunk
       pc: int
       stackBottom: int
@@ -219,16 +234,15 @@ proc interpret*(assembly: Assembly, chunk: Chunk, opts: VmOptions): Value =
     of opcCall, opcCallTail:
 
       let argc = chunk.readU8(pc).int
-      # store the frame *after* reading the operand
-      # also, in a tail call we only want to store the frame at the very
-      # first tail call to know where to return to
+      # in a tail call we only want to store the frame at the very
+      # first tail call in the chain to know where to return to
       if opcode == opcCallTail:
         if not isTailCall:
           storeFrame()
           isTailCall = true
         else:
-          # we need to temporarily move the arguments off the stack to clean
-          # up the old call
+          # we need to temporarily move the arguments off the stack before we
+          # clean up the old call
           let nval = argc + 1
           tailCallArgs.setLen(nval)
           for i in 0..<nval:
@@ -250,7 +264,7 @@ proc interpret*(assembly: Assembly, chunk: Chunk, opts: VmOptions): Value =
           goToClosure action.closure
         else:
           # the result of an unsuccessful if-call is always 1 to allow for
-          # an else branch
+          # an "else" branch
           doReturn Value(kind: vkNumber, number: 1)
       of vkClosure:
         goToClosure callee.closure

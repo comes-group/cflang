@@ -1,3 +1,9 @@
+## The cflang parser using NPeg.
+
+# i used npeg instead of a hand-written parser mainly because i just wanted
+# to cobble something together quickly and just get to implementing all the
+# good stuff (closures :yum:)
+
 import std/algorithm
 import std/strscans
 import std/strutils
@@ -17,6 +23,8 @@ type
     nkCall, nkFunction
 
   Node* = ref object
+    ## An AST node.
+
     line*: int
     case kind*: NodeKind
     of nkNumber: number*: float
@@ -30,11 +38,15 @@ type
     sons*: seq[Node]
 
   ParseState = object
+    # the parser uses a stack of nodes to build ASTs.
+    # unfortunately this is the only way to do this with NPeg.
+    # i wish it had a cleaner way, something PEG.js style perhaps.
     stack: seq[Node]
 
   ParseError* = object of ValueError
 
 proc `$`*(node: Node): string =
+  ## Stringifies an AST node into a human-readable representation.
 
   case node.kind
   of nkNumber: result = "Number " & $node.number
@@ -51,6 +63,7 @@ proc `$`*(node: Node): string =
     result.add(children.indent(2))
 
 proc `$`*(nodes: seq[Node]): string =
+  ## Stringifies a seq of nodes. Used mainly for debugging the parser.
 
   for node in nodes:
     result.add "---\n"
@@ -58,19 +71,25 @@ proc `$`*(nodes: seq[Node]): string =
     result.add "\n"
 
 proc `==`(t: Token, k: TokenKind): bool =
+  ## Compares a token's kind. This is used by NPeg.
   t.kind == k
 
-proc repr*(t: Token): string = $t
+proc repr*(t: Token): string =
+  ## ``repr`` implementation for debugging the parser with `-d:npegTrace`.
+  $t
 
 proc top(s: ParseState): Node =
+  ## Returns the topmost node of the stack.
   s.stack[^1]
 
 proc push(s: var ParseState, n: Node) =
+  ## Pushes a node onto the stack.
   s.stack.add n
 #   echo "-> ", n
 #   echo s.stack
 
 proc pop(s: var ParseState): Node =
+  ## Pops a node off the stack.
   result = pop s.stack
 #   echo "<- ", result
 #   echo s.stack
@@ -188,6 +207,7 @@ let parser = peg(program, Token, p: ParseState):
   program <- expr * !1
 
 proc parse*(s: string): Node =
+  ## Tokenizes and parses the given input string into an AST node.
 
   var state: ParseState
 
@@ -203,6 +223,7 @@ proc parse*(s: string): Node =
     var
       i: int
       err: string
+    # i wish npeg had a better interface for this…
     if scanf(e.msg, "Parsing error at #$i: expected \"$+\"", i, err):
       var
         errtok = tokens[e.matchLen]

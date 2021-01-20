@@ -1,3 +1,8 @@
+## The cflang lexer using NPeg.
+
+# i'd say that unlike for parsing grammars into ASTs, npeg really shines when
+# it comes to parsing grammars into tokens.
+
 import std/strutils
 import std/tables
 
@@ -23,6 +28,8 @@ type
     tkComma = ",", tkSemi = ";"
 
   Token* = object
+    ## A token.
+
     line*: int
     case kind*: TokenKind
     of tkNumber: number*: float
@@ -30,6 +37,9 @@ type
     else: discard
 
   Lexer = object
+    ## Lexer state. This keeps track of the current line to know where to
+    ## report errors.
+
     t: seq[Token]
     line: int
 
@@ -81,6 +91,7 @@ let lex = peg("tokens", l: Lexer):
   tokens <- ?ignored * +(token * ?ignored) * !1
 
 proc tokenize*(s: string): seq[Token] =
+  ## Tokenizes the given string into cflang tokens.
 
   var state = Lexer(line: 1)
 
@@ -94,6 +105,7 @@ proc tokenize*(s: string): seq[Token] =
   result = move state.t
 
 proc `$`*(t: Token): string =
+  ## Stringifies a token.
 
   case t.kind
   of tkNumber:
@@ -104,6 +116,7 @@ proc `$`*(t: Token): string =
     result.add $t.kind
 
 proc `$`*(t: seq[Token]): string =
+  ## Stringifies a seq of tokens. This is mostly used for debugging purposes.
 
   for tok in t:
     result.addSep("\p", 1)

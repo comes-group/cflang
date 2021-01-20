@@ -1,10 +1,11 @@
+## A very rudimentary disassembler for debugging purposes.
+
 import std/strutils
 
 import chunk
 
 proc disassemble*(chunk: Chunk): string =
-
-  # just a very rudimentary disassembler. nothing special.
+  ## Disassembles the bytecode in the given chunk into a human-readable string.
 
   var pc = 0
   while pc < chunk.bytecode.len:
